@@ -1,0 +1,89 @@
+Plan: Three‑Phase Calendar Scheduling App (Final Revision)
+MVP focus: Three independent repos (brb-baristas, brb-events, brb-website) with shared Firebase backend. Bands self-register via email/password on invite link, manage only their events. Admin dashboard manages all events/bands. Each repo deploys independently to AWS containers via GitHub Actions. Firebase free tier only.
+
+Phase 1: Dev Local Setup & Firebase/Google Calendar Integration
+Step 1.1: Firebase Project Setup (Shared Backend)
+
+Create single Firebase project (DEV environment) at console.firebase.google.com
+Enable Firestore (us-central1 region, test mode)
+Enable Firebase Auth (email/password provider)
+Download service account key for backend Google Calendar API
+Create .env.local with Firebase config for local dev
+Step 1.2: Firestore Schema Design (All 3 Repos Share)
+
+collections/events: { id, title, date, startTime, endTime, description, bandEmail, adminId, bandId, googleCalendarEventId, status (pending/confirmed/cancelled) }
+collections/bands: { id, email, passwordHash, bandName, bio, status (active/inactive), createdAt, createdBy (adminId) }
+collections/invitations: { id, email, token (single-use), createdAt, expiresAt (5min after creation), claimed }
+Step 1.3: brb-baristas Repo Setup (Admin Dashboard)
+
+Initialize React + Vite project
+Install: firebase, react-router-dom, axios, date-fns
+Structure: /src/pages/Dashboard.jsx, /src/pages/BandManagement.jsx, /src/pages/EventManagement.jsx
+Create /src/firebase/config.js with Firebase initialization
+Admin login: Firebase Auth (email/password, hardcoded admin account or admin flag in Firestore)
+Features:
+View all events + all bands
+Create/edit/delete events → sync to Google Calendar
+Generate invitation: create token, set expiry (5 min), send email or display link to copy
+View band event requests
+Approve/confirm band bookings → update Google Calendar
+Step 1.4: brb-events Repo Setup (Band Portal)
+
+Initialize React + Vite project (separate from brb-baristas)
+Install same dependencies
+Structure: /src/pages/SignUp.jsx, /src/pages/Login.jsx, /src/pages/ClaimInvite.jsx, /src/pages/MyEvents.jsx, /src/pages/EventDetail.jsx
+Band signup: email + password (Firebase Auth), claim invitation token (verify token valid + not expired)
+Band login: email/password → Firebase Auth
+Features:
+Claim invitation token → links band to event
+View only their own events
+Create new event (if permitted by admin via token)
+Edit their own event details
+Delete their own event
+View confirmation status in Google Calendar
+Step 1.5: brb-website Repo Setup (Public Website)
+
+Initialize React + Vite project (separate)
+Display public events (read-only from Firestore)
+Contact/info page
+Link to band signup (brb-events invitation link)
+Step 1.6: Google Calendar OAuth Integration (Admin Only)
+
+Register OAuth app in Google Cloud Console
+OAuth redirect: http://localhost:5173/oauth-callback (for local dev; update for prod)
+brb-baristas: implement OAuth flow to authorize admin account
+Store OAuth token securely in Firestore (admin doc only)
+Google Calendar API: create, update, delete events from admin actions
+Step 1.7: Band Self-Registration Flow
+
+Admin generates invitation link: events.brbcoffee-atx.com/claim?token=<TOKEN>
+Band clicks link → lands on signup form (email + password)
+Band signs up → Firebase Auth creates account
+System validates token (exists, not expired, not claimed) → claims token for band
+Band linked to event in Firestore, can now view/edit/delete that event only
+Step 1.8: Admin Event Management
+
+Login as admin
+Create event: title, date, time, description → save to Firestore + Google Calendar
+Edit event: modify details, sync to Google Calendar
+Delete event: remove from Firestore + Google Calendar
+Generate invitation: new token (UUID), set 5-min expiry, display "copy link" or send email
+Step 1.9: Band Event Management
+
+Login as band (email/password)
+View events they're invited to/created
+Create new event (if admin allows) or claim existing one
+Edit event: update details, sync to Google Calendar (via admin service account)
+Delete event: remove from Firestore + Google Calendar
+Each band sees only their own events, no access to other bands
+Step 1.10: Local Development Setup
+
+Clone 3 repos into workspace: brb-baristas, brb-events, brb-website
+Each repo has dev or docker-compose.local.yml to run independently
+Shared .env.local template for Firebase config (copy to each repo)
+Run individually: npm run dev in each folder (dev server on different ports: 3001, 3002, 3000)
+Or run all via single Docker Compose: orchestrate all 3 services
+
+
+we start locally by installing depencies 
+npm install 
