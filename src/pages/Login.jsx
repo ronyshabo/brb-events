@@ -36,7 +36,7 @@ function Login({ setShowSignUp, setUser }) {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>BRB Coffee - Band Portal</h1>
+        <h1>BRB Coffee - events Portal</h1>
         <form onSubmit={handleLogin}>
           <div className="form-group">
             <label>Email</label>

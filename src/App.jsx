@@ -39,7 +39,7 @@ function App() {
   return (
     <div className="app">
       <nav className="navbar">
-        <h1>BRB Coffee - Band Portal</h1>
+        <h1>BRB Coffee - events Portal</h1>
         <button onClick={handleLogout}>Logout</button>
       </nav>
       <BandPortal user={user} />
