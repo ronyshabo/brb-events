@@ -147,3 +147,8 @@
 .modal-content button:last-child:hover {
   background-color: #c0392b;
 }
+
+.portal .error {
+  color: #e74c3c;
+  margin-top: 0.75rem;
+}

@@ -21,6 +21,8 @@ function BandPortal({ user }) {
   const [bandId, setBandId] = useState(null)
   const [bandData, setBandData] = useState(null)
   const [showCreateEvent, setShowCreateEvent] = useState(false)
+  const [createEventError, setCreateEventError] = useState('')
+  const [createEventLoading, setCreateEventLoading] = useState(false)
   const [formData, setFormData] = useState({
     notes: '',
   })
@@ -124,8 +126,18 @@ function BandPortal({ user }) {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault()
+    setCreateEventError('')
+    setCreateEventLoading(true)
     if (!bandId || !bandData) {
       console.error('Missing bandId or bandData')
+      setCreateEventError('Band details are still loading. Please try again in a moment.')
+      setCreateEventLoading(false)
+      return
+    }
+
+    if (newEventData.startTime && newEventData.endTime && newEventData.endTime <= newEventData.startTime) {
+      setCreateEventError('End time must be after the start time.')
+      setCreateEventLoading(false)
       return
     }
 
@@ -153,7 +165,9 @@ function BandPortal({ user }) {
       fetchBandData() // Refresh to show new event
     } catch (err) {
       console.error('Error creating event:', err)
-      alert('Error creating event: ' + err.message)
+      setCreateEventError(err.message || 'Unable to create event. Please try again.')
+    } finally {
+      setCreateEventLoading(false)
     }
   }
 
@@ -297,9 +311,12 @@ function BandPortal({ user }) {
                   placeholder="e.g., BRB Coffee Main Stage"
                 />
               </div>
+              {createEventError && <p className="error">{createEventError}</p>}
               <p style={{ fontSize: '0.9rem', color: '#7f8c8d', marginTop: '1rem' }}>Your event request will be pending until approved by an admin.</p>
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                <button type="submit">Submit Request</button>
+                <button type="submit" disabled={createEventLoading}>
+                  {createEventLoading ? 'Submitting...' : 'Submit Request'}
+                </button>
                 <button type="button" onClick={() => setShowCreateEvent(false)}>Cancel</button>
               </div>
             </form>
