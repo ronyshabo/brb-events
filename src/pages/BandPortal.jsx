@@ -24,54 +24,55 @@ function BandPortal({ user }) {
     notes: '',
   })
 
-  useEffect(() => {
-    const fetchBandData = async () => {
-      try {
-        // Find band profile
-        const bandQuery = query(collection(db, 'bands'), where('userId', '==', user.uid))
-        const bandSnapshot = await getDocs(bandQuery)
+  const fetchBandData = async () => {
+    setLoading(true)
+    try {
+      // Find band profile
+      const bandQuery = query(collection(db, 'bands'), where('userId', '==', user.uid))
+      const bandSnapshot = await getDocs(bandQuery)
 
-        if (bandSnapshot.empty) {
-          setLoading(false)
-          return
-        }
-
-        const currentBandId = bandSnapshot.docs[0].id
-        const bandData = bandSnapshot.docs[0].data()
-        const bandEmail = bandData.email
-        setBandId(currentBandId)
-        setBandData(bandData)
-
-        // Fetch events associated with this band's email
-        const eventsQuery = query(
-          collection(db, 'events'),
-          where('bandEmail', '==', bandEmail)
-        )
-        const eventsSnapshot = await getDocs(eventsQuery)
-        const bandEvents = eventsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        setAvailableEvents(bandEvents)
-
-        // Fetch bookings for this band
-        const bookingsQuery = query(
-          collection(db, 'bookings'),
-          where('bandId', '==', currentBandId)
-        )
-        const bookingsSnapshot = await getDocs(bookingsQuery)
-        const bookingsList = bookingsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        setMyBookings(bookingsList)
-      } catch (err) {
-        console.error('Error fetching band data:', err)
-      } finally {
+      if (bandSnapshot.empty) {
         setLoading(false)
+        return
       }
-    }
 
+      const currentBandId = bandSnapshot.docs[0].id
+      const bandData = bandSnapshot.docs[0].data()
+      const bandEmail = bandData.email
+      setBandId(currentBandId)
+      setBandData(bandData)
+
+      // Fetch events associated with this band's email
+      const eventsQuery = query(
+        collection(db, 'events'),
+        where('bandEmail', '==', bandEmail)
+      )
+      const eventsSnapshot = await getDocs(eventsQuery)
+      const bandEvents = eventsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      setAvailableEvents(bandEvents)
+
+      // Fetch bookings for this band
+      const bookingsQuery = query(
+        collection(db, 'bookings'),
+        where('bandId', '==', currentBandId)
+      )
+      const bookingsSnapshot = await getDocs(bookingsQuery)
+      const bookingsList = bookingsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      setMyBookings(bookingsList)
+    } catch (err) {
+      console.error('Error fetching band data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchBandData()
   }, [user])
 
@@ -118,6 +119,9 @@ function BandPortal({ user }) {
     <div className="portal">
       <div className="portal-header">
         <h2>Band Portal</h2>
+        <button onClick={fetchBandData} className="refresh-btn" title="Refresh events">
+          🔄 Refresh
+        </button>
       </div>
 
       <div className="portal-section">
