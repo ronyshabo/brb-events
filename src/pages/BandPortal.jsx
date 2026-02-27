@@ -42,13 +42,26 @@ function BandPortal({ user }) {
       const bandQuery = query(collection(db, 'bands'), where('userId', '==', user.uid))
       const bandSnapshot = await getDocs(bandQuery)
 
-      if (bandSnapshot.empty) {
+      let currentBandId = null
+      let bandData = null
+
+      if (!bandSnapshot.empty) {
+        currentBandId = bandSnapshot.docs[0].id
+        bandData = bandSnapshot.docs[0].data()
+      } else if (user?.email) {
+        const fallbackQuery = query(collection(db, 'bands'), where('email', '==', user.email))
+        const fallbackSnapshot = await getDocs(fallbackQuery)
+        if (!fallbackSnapshot.empty) {
+          currentBandId = fallbackSnapshot.docs[0].id
+          bandData = fallbackSnapshot.docs[0].data()
+        }
+      }
+
+      if (!currentBandId || !bandData) {
         setLoading(false)
         return
       }
 
-      const currentBandId = bandSnapshot.docs[0].id
-      const bandData = bandSnapshot.docs[0].data()
       const bandEmail = bandData.email
       setBandId(currentBandId)
       setBandData(bandData)
@@ -130,7 +143,7 @@ function BandPortal({ user }) {
     setCreateEventLoading(true)
     if (!bandId || !bandData) {
       console.error('Missing bandId or bandData')
-      setCreateEventError('Band details are still loading. Please try again in a moment.')
+      setCreateEventError('We could not find your band profile. Please refresh and try again.')
       setCreateEventLoading(false)
       return
     }
