@@ -124,9 +124,13 @@ function BandPortal({ user }) {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault()
-    if (!bandId || !bandData) return
+    if (!bandId || !bandData) {
+      console.error('Missing bandId or bandData')
+      return
+    }
 
     try {
+      console.log('Creating event with data:', newEventData)
       await addDoc(collection(db, 'events'), {
         ...newEventData,
         bandId,
@@ -136,6 +140,7 @@ function BandPortal({ user }) {
         createdAt: new Date(),
       })
 
+      console.log('Event created successfully')
       setNewEventData({
         title: '',
         description: '',
@@ -148,6 +153,9 @@ function BandPortal({ user }) {
       fetchBandData() // Refresh to show new event
     } catch (err) {
       console.error('Error creating event:', err)
+      alert('Error creating event: ' + err.message)
+    }
+  }
     }
   }
 
@@ -292,8 +300,10 @@ function BandPortal({ user }) {
                 />
               </div>
               <p style={{ fontSize: '0.9rem', color: '#7f8c8d', marginTop: '1rem' }}>Your event request will be pending until approved by an admin.</p>
-              <button type="submit">Submit Request</button>
-              <button type="button" onClick={() => setShowCreateEvent(false)}>Cancel</button>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <button type="submit">Submit Request</button>
+                <button type="button" onClick={() => setShowCreateEvent(false)}>Cancel</button>
+              </div>
             </form>
           </div>
         </div>
