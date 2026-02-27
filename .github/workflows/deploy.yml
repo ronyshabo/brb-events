@@ -18,7 +18,14 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t brb-events:latest .
+          docker build -t brb-events:latest \
+            --build-arg VITE_FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}" \
+            --build-arg VITE_FIREBASE_AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}" \
+            --build-arg VITE_FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
+            --build-arg VITE_FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}" \
+            --build-arg VITE_FIREBASE_MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" \
+            --build-arg VITE_FIREBASE_APP_ID="${{ secrets.FIREBASE_APP_ID }}" \
+            .
           docker images brb-events:latest
 
       - name: Deploy to EC2
@@ -34,17 +41,48 @@ jobs:
           mkdir -p ~/.ssh
           echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo "StrictHostKeyChecking no" >> ~/.ssh/config
+          
+          # SSH config for connection stability
+          cat >> ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+            ConnectTimeout=10
+            ServerAliveInterval=60
+            ServerAliveCountMax=3
+          SSHCONFIG
           
           # Add host to known_hosts
-          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "Testing SSH connection..."
+          ssh-keyscan -T 10 -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          
+          # Test connection with retry
+          MAX_RETRIES=3
+          RETRY=0
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            if ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 "$EC2_USER@$EC2_HOST" "echo 'SSH connection successful'" 2>&1; then
+              echo "SSH connection established"
+              break
+            fi
+            RETRY=$((RETRY + 1))
+            if [ $RETRY -lt $MAX_RETRIES ]; then
+              echo "Connection attempt $RETRY failed, retrying in 5 seconds..."
+              sleep 5
+            else
+              echo "ERROR: Could not connect to EC2 instance after $MAX_RETRIES attempts"
+              echo "Please check: 1) EC2 security group allows SSH (port 22) from GitHub IPs"
+              echo "             2) EC2 instance is running"
+              echo "             3) SSH key is correct"
+              exit 1
+            fi
+          done
           
           # Save and transfer Docker image
           echo "Saving Docker image..."
           docker save brb-events:latest | gzip > brb-events.tar.gz
           
           echo "Transferring image to EC2..."
-          scp -i ~/.ssh/id_rsa brb-events.tar.gz "$EC2_USER@$EC2_HOST:/tmp/"
+          scp -i ~/.ssh/id_rsa -o ConnectTimeout=10 brb-events.tar.gz "$EC2_USER@$EC2_HOST:/tmp/"
           
           # Deploy on EC2
           echo "Deploying on EC2..."
