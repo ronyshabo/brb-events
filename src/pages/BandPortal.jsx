@@ -20,8 +20,17 @@ function BandPortal({ user }) {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [bandId, setBandId] = useState(null)
   const [bandData, setBandData] = useState(null)
+  const [showCreateEvent, setShowCreateEvent] = useState(false)
   const [formData, setFormData] = useState({
     notes: '',
+  })
+  const [newEventData, setNewEventData] = useState({
+    title: '',
+    description: '',
+    date: '',
+    startTime: '',
+    endTime: '',
+    venue: '',
   })
 
   const fetchBandData = async () => {
@@ -113,15 +122,49 @@ function BandPortal({ user }) {
     }
   }
 
+  const handleCreateEvent = async (e) => {
+    e.preventDefault()
+    if (!bandId || !bandData) return
+
+    try {
+      await addDoc(collection(db, 'events'), {
+        ...newEventData,
+        bandId,
+        bandName: bandData.bandName,
+        bandEmail: bandData.email,
+        status: 'pending',
+        createdAt: new Date(),
+      })
+
+      setNewEventData({
+        title: '',
+        description: '',
+        date: '',
+        startTime: '',
+        endTime: '',
+        venue: '',
+      })
+      setShowCreateEvent(false)
+      fetchBandData() // Refresh to show new event
+    } catch (err) {
+      console.error('Error creating event:', err)
+    }
+  }
+
   if (loading) return <div>Loading your band portal...</div>
 
   return (
     <div className="portal">
       <div className="portal-header">
         <h2>Band Portal</h2>
-        <button onClick={fetchBandData} className="refresh-btn" title="Refresh events">
-          🔄 Refresh
-        </button>
+        <div className="header-actions">
+          <button onClick={() => setShowCreateEvent(true)} className="create-event-btn" title="Request a new event">
+            ➕ Create Event
+          </button>
+          <button onClick={fetchBandData} className="refresh-btn" title="Refresh events">
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
       <div className="portal-section">
@@ -182,6 +225,75 @@ function BandPortal({ user }) {
               </div>
               <button type="submit">Submit Application</button>
               <button type="button" onClick={() => setSelectedEvent(null)}>Cancel</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showCreateEvent && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Request a New Event</h3>
+            <form onSubmit={handleCreateEvent}>
+              <div className="form-group">
+                <label>Event Title *</label>
+                <input
+                  type="text"
+                  value={newEventData.title}
+                  onChange={(e) => setNewEventData({ ...newEventData, title: e.target.value })}
+                  placeholder="e.g., Live at BRB Coffee"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Description *</label>
+                <textarea
+                  value={newEventData.description}
+                  onChange={(e) => setNewEventData({ ...newEventData, description: e.target.value })}
+                  placeholder="Describe your event..."
+                  rows="3"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  value={newEventData.date}
+                  onChange={(e) => setNewEventData({ ...newEventData, date: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Start Time *</label>
+                <input
+                  type="time"
+                  value={newEventData.startTime}
+                  onChange={(e) => setNewEventData({ ...newEventData, startTime: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>End Time *</label>
+                <input
+                  type="time"
+                  value={newEventData.endTime}
+                  onChange={(e) => setNewEventData({ ...newEventData, endTime: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Venue</label>
+                <input
+                  type="text"
+                  value={newEventData.venue}
+                  onChange={(e) => setNewEventData({ ...newEventData, venue: e.target.value })}
+                  placeholder="e.g., BRB Coffee Main Stage"
+                />
+              </div>
+              <p style={{ fontSize: '0.9rem', color: '#7f8c8d', marginTop: '1rem' }}>Your event request will be pending until approved by an admin.</p>
+              <button type="submit">Submit Request</button>
+              <button type="button" onClick={() => setShowCreateEvent(false)}>Cancel</button>
             </form>
           </div>
         </div>

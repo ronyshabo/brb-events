@@ -62,7 +62,7 @@ function Login({ setShowSignUp, setUser }) {
           </button>
         </form>
         <p className="signup-link">
-          Don't have an account? <button onClick={() => setShowSignUp(true)}>Sign up</button>
+          Don't have an account? <button type="button" onClick={() => setShowSignUp(true)}>Sign up</button>
         </p>
       </div>
     </div>
