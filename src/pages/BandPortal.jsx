@@ -156,8 +156,6 @@ function BandPortal({ user }) {
       alert('Error creating event: ' + err.message)
     }
   }
-    }
-  }
 
   if (loading) return <div>Loading your band portal...</div>
 
