@@ -9,6 +9,19 @@ function Login({ setShowSignUp, setUser }) {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
+  const getAuthErrorMessage = (code, fallbackMessage) => {
+    switch (code) {
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+        return 'Incorrect email or password.'
+      case 'auth/invalid-email':
+        return 'Please enter a valid email address.'
+      default:
+        return fallbackMessage || 'Unable to log in right now. Please try again.'
+    }
+  }
+
   // Auto-redirect to signup if token is in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -24,10 +37,11 @@ function Login({ setShowSignUp, setUser }) {
     setError(null)
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const trimmedEmail = email.trim()
+      const userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, password)
       setUser(userCredential.user)
     } catch (err) {
-      setError(err.message)
+      setError(getAuthErrorMessage(err.code, err.message))
     } finally {
       setLoading(false)
     }

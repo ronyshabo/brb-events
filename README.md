@@ -11,7 +11,7 @@ Band portal for BRB Coffee to view and manage event bookings.
 
 ## Features
 
-- Band signup with invitation token
+- Band/event planner signup (invitation token optional)
 - Band login (email/password)
 - View available events
 - Create event bookings
