@@ -30,3 +30,22 @@ docker build -t brb-events .
 docker run -p 3002:80 brb-events
 ```
 
+## HTTPS (Secure Access)
+
+Browser "not secure" warnings happen when the site is served over plain HTTP or with an invalid certificate.
+
+1. Get a valid TLS certificate for your domain (`fullchain.pem` and `privkey.pem`).
+2. Mount the certs into the container at `/etc/nginx/certs`.
+3. Enable HTTPS mode with `ENABLE_HTTPS=true`.
+
+```bash
+docker build -t brb-events .
+docker run \
+	-p 80:80 -p 443:443 \
+	-e ENABLE_HTTPS=true \
+	-v /path/to/certs:/etc/nginx/certs:ro \
+	brb-events
+```
+
+When HTTPS is enabled, HTTP requests are automatically redirected to HTTPS.
+
