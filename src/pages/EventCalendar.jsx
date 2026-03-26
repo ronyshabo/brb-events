@@ -121,13 +121,12 @@ function EventCalendar({ events = [] }) {
         <div className="cal-panel">
           <div className="cal-panel-head">
             <span className="cal-panel-date">{selectedLabel}</span>
-            <button className="cal-panel-close" onClick={() => setSelectedDay(null)}>✕</button>
+            <button className="cal-panel-close" onClick={() => setSelectedDay(null)}>×</button>
           </div>
           {selectedEvents.length === 0 ? (
             <div className="cal-open-slot">
-              <span className="cal-open-icon">✅</span>
               <div>
-                <strong>This date is available!</strong>
+                <strong>This date is available</strong>
                 <p>No events are booked — feel free to request this slot.</p>
               </div>
             </div>
@@ -137,15 +136,15 @@ function EventCalendar({ events = [] }) {
                 <div key={e.id} className="cal-panel-event">
                   <div className="cal-event-title">{e.title}</div>
                   <div className="cal-event-meta">
-                    🕐 {fmt12(e.startTime)} – {fmt12(e.endTime)}
+                    {fmt12(e.startTime)} – {fmt12(e.endTime)}
                   </div>
-                  {e.venue && <div className="cal-event-meta">📍 {e.venue}</div>}
-                  {e.bandName && <div className="cal-event-meta">🎶 {e.bandName}</div>}
+                  {e.venue && <div className="cal-event-meta">{e.venue}</div>}
+                  {e.bandName && <div className="cal-event-meta">{e.bandName}</div>}
                 </div>
               ))}
               {selectedEvents.length > 0 && (
                 <p className="cal-conflict-note">
-                  ⚠️ There {selectedEvents.length === 1 ? 'is' : 'are'} already {selectedEvents.length} event{selectedEvents.length > 1 ? 's' : ''} on this date. Consider a different day or check for a time gap.
+                  There {selectedEvents.length === 1 ? 'is' : 'are'} already {selectedEvents.length} event{selectedEvents.length > 1 ? 's' : ''} on this date. Consider a different day or check for a time gap.
                 </p>
               )}
             </div>
