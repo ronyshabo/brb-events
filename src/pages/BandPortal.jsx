@@ -177,7 +177,7 @@ function BandPortal({ user }) {
       {/* Welcome banner */}
       <div className="welcome-banner">
         <div className="welcome-text">
-          <h2>Welcome back{bandData?.bandName ? `, ${bandData.bandName}` : ''}! 👋</h2>
+          <h2>Welcome back{bandData?.bandName ? `, ${bandData.bandName}` : ''}! </h2>
           <p>Check the schedule below to find a great slot, then submit your event request.</p>
         </div>
         <div className="welcome-stats">
@@ -202,20 +202,20 @@ function BandPortal({ user }) {
           className={`tab-btn${activeTab === 'calendar' ? ' active' : ''}`}
           onClick={() => setActiveTab('calendar')}
         >
-          🗓️ Calendar
+          Calendar
         </button>
         <button
           className={`tab-btn${activeTab === 'schedule' ? ' active' : ''}`}
           onClick={() => setActiveTab('schedule')}
         >
-          📋 List View
+          List View
           <span className="tab-count">{upcomingApproved.length}</span>
         </button>
         <button
           className={`tab-btn${activeTab === 'mine' ? ' active' : ''}`}
           onClick={() => setActiveTab('mine')}
         >
-          🎵 My Events
+          My Events
           <span className="tab-count">{myEvents.length}</span>
         </button>
         <button className="tab-btn create-tab" onClick={() => setShowCreateEvent(true)}>
