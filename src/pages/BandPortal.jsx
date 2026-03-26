@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { collection, query, where, getDocs, addDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
+import EventCalendar from './EventCalendar'
 import '../styles/Portal.css'
 
 const formatTime12Hour = (time24) => {
@@ -50,7 +51,7 @@ function BandPortal({ user }) {
   const [loading, setLoading] = useState(true)
   const [bandId, setBandId] = useState(null)
   const [bandData, setBandData] = useState(null)
-  const [activeTab, setActiveTab] = useState('schedule')
+  const [activeTab, setActiveTab] = useState('calendar')
   const [showCreateEvent, setShowCreateEvent] = useState(false)
   const [createEventError, setCreateEventError] = useState('')
   const [createEventLoading, setCreateEventLoading] = useState(false)
@@ -198,10 +199,16 @@ function BandPortal({ user }) {
       {/* Tab bar */}
       <div className="tab-bar">
         <button
+          className={`tab-btn${activeTab === 'calendar' ? ' active' : ''}`}
+          onClick={() => setActiveTab('calendar')}
+        >
+          🗓️ Calendar
+        </button>
+        <button
           className={`tab-btn${activeTab === 'schedule' ? ' active' : ''}`}
           onClick={() => setActiveTab('schedule')}
         >
-          📅 Full Schedule
+          📋 List View
           <span className="tab-count">{upcomingApproved.length}</span>
         </button>
         <button
@@ -215,6 +222,16 @@ function BandPortal({ user }) {
           ➕ Request Event
         </button>
       </div>
+
+      {/* Calendar tab */}
+      {activeTab === 'calendar' && (
+        <div className="portal-section">
+          <p className="section-hint">
+            Click any day to see what's booked. <strong>Green = open slot</strong>, dots = events already scheduled.
+          </p>
+          <EventCalendar events={approvedEvents} />
+        </div>
+      )}
 
       {/* Full Schedule tab */}
       {activeTab === 'schedule' && (
