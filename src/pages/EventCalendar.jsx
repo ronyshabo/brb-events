@@ -69,6 +69,11 @@ function EventCalendar({ events = [] }) {
         </button>
       </div>
 
+      {/* Info note for users */}
+      <div className="cal-info-note" style={{ margin: '0.5rem 0 1rem', fontSize: '0.97rem', color: '#555', background: '#f8f8f8', borderRadius: 6, padding: '0.7rem 1rem' }}>
+        <strong>Note:</strong> All <span style={{ color: '#1e8449' }}>approved</span> and <span style={{ color: '#d68910' }}>pending</span> events are shown. Pending events are awaiting admin approval and may be rescheduled.
+      </div>
+
       {/* Legend */}
       <div className="cal-legend">
         <span className="legend-item"><span className="cal-dot" /> event booked</span>
@@ -139,7 +144,14 @@ function EventCalendar({ events = [] }) {
                     {fmt12(e.startTime)} – {fmt12(e.endTime)}
                   </div>
                   {e.venue && <div className="cal-event-meta">{e.venue}</div>}
-                  {e.bandName && <div className="cal-event-meta">{e.bandName}</div>}
+                  {e.bandName && (
+                    <div className="cal-event-meta"><strong>Band:</strong> {e.bandName}</div>
+                  )}
+                  <div className="cal-event-meta">
+                    <strong>Status:</strong> <span style={{ color: e.status === 'approved' ? '#1e8449' : e.status === 'pending' ? '#d68910' : '#c0392b' }}>
+                      {e.status === 'approved' ? 'Approved' : e.status === 'pending' ? 'Pending' : e.status}
+                    </span>
+                  </div>
                 </div>
               ))}
               {selectedEvents.length > 0 && (
