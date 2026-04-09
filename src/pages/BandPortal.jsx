@@ -92,14 +92,12 @@ function BandPortal({ user }) {
       setBandId(currentBandId)
       setBandData(profile)
 
-      // All approved events — full public schedule so bands can pick open slots
-      const approvedSnap = await getDocs(
-        query(collection(db, 'events'), where('status', '==', 'approved'))
-      )
-      const approved = approvedSnap.docs
+      // Fetch ALL events (any status) for full calendar visibility
+      const allEventsSnap = await getDocs(collection(db, 'events'))
+      const allEvents = allEventsSnap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.date > b.date ? 1 : -1))
-      setApprovedEvents(approved)
+      setApprovedEvents(allEvents)
 
       // This band's own events (all statuses)
       const mySnap = await getDocs(
@@ -227,7 +225,7 @@ function BandPortal({ user }) {
       {activeTab === 'calendar' && (
         <div className="portal-section">
           <p className="section-hint">
-            Click any day to see what's booked. <strong>Green = open slot</strong>, dots = events already scheduled.
+            Click any day to see what's booked. <strong>Green = open slot</strong>, dots = events already scheduled or pending.
           </p>
           <EventCalendar events={approvedEvents} />
         </div>
@@ -237,7 +235,7 @@ function BandPortal({ user }) {
       {activeTab === 'schedule' && (
         <div className="portal-section">
           <p className="section-hint">
-            These are all <strong>approved</strong> events. Use this to find a date &amp; time that works without clashing.
+            These are all <strong>booked or pending events</strong>. Use this to find a date &amp; time that works without clashing.
           </p>
 
           {upcomingApproved.length === 0 && pastApproved.length === 0 ? (
