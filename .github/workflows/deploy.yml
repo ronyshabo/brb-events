@@ -34,81 +34,47 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_SSH_PORT: ${{ secrets.EC2_SSH_PORT }}
+          EC2_HOST_KEY: ${{ secrets.EC2_HOST_KEY }}
         run: |
-          set -e
-          
+          set -euo pipefail
+          SSH_PORT="${EC2_SSH_PORT:-2222}"
+          SSH_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o ConnectTimeout=20"
+          echo "Deploying to ${EC2_USER}@${EC2_HOST}:${SSH_PORT}"
+
           # Setup SSH
           mkdir -p ~/.ssh
-          echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # SSH config for connection stability
-          cat >> ~/.ssh/config << 'SSHCONFIG'
-          Host *
-            StrictHostKeyChecking no
-            UserKnownHostsFile=/dev/null
-            ConnectTimeout=10
-            ServerAliveInterval=60
-            ServerAliveCountMax=3
-          SSHCONFIG
-          
-          # Add host to known_hosts
-          echo "Testing SSH connection..."
-          ssh-keyscan -T 10 -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          
-          # Test connection with retry
-          MAX_RETRIES=3
-          RETRY=0
-          while [ $RETRY -lt $MAX_RETRIES ]; do
-            if ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 "$EC2_USER@$EC2_HOST" "echo 'SSH connection successful'" 2>&1; then
-              echo "SSH connection established"
-              break
-            fi
-            RETRY=$((RETRY + 1))
-            if [ $RETRY -lt $MAX_RETRIES ]; then
-              echo "Connection attempt $RETRY failed, retrying in 5 seconds..."
-              sleep 5
-            else
-              echo "ERROR: Could not connect to EC2 instance after $MAX_RETRIES attempts"
-              echo "Please check: 1) EC2 security group allows SSH (port 22) from GitHub IPs"
-              echo "             2) EC2 instance is running"
-              echo "             3) SSH key is correct"
+          trap 'rm -f ~/.ssh/id_rsa brb-events.tar' EXIT
+
+          if [ -n "${EC2_HOST_KEY:-}" ]; then
+            echo "$EC2_HOST_KEY" > ~/.ssh/known_hosts
+          else
+            if ! ssh-keyscan -T 15 -p "$SSH_PORT" -H "$EC2_HOST" >> ~/.ssh/known_hosts; then
+              echo "::error::ssh-keyscan failed. Check EC2_HOST/EC2_SSH_PORT reachability or set EC2_HOST_KEY secret."
               exit 1
             fi
-          done
-          
-          # Save and transfer Docker image
-          echo "Saving Docker image..."
-          docker save brb-events:latest | gzip > brb-events.tar.gz
-          
-          echo "Transferring image to EC2..."
-          scp -i ~/.ssh/id_rsa -o ConnectTimeout=10 brb-events.tar.gz "$EC2_USER@$EC2_HOST:/tmp/"
-          
-          # Deploy on EC2
-          echo "Deploying on EC2..."
-          ssh -i ~/.ssh/id_rsa "$EC2_USER@$EC2_HOST" bash << 'EOF'
-          set -e
-          
-          echo "Loading Docker image..."
-          docker load < /tmp/brb-events.tar.gz
-          
-          echo "Stopping old container..."
+          fi
+
+          ssh -p "$SSH_PORT" -i ~/.ssh/id_rsa $SSH_OPTS $EC2_USER@$EC2_HOST "echo Connected to \$(hostname)"
+
+          docker save brb-events:latest > brb-events.tar
+          scp -P "$SSH_PORT" -i ~/.ssh/id_rsa $SSH_OPTS brb-events.tar $EC2_USER@$EC2_HOST:/tmp/
+
+          ssh -p "$SSH_PORT" -i ~/.ssh/id_rsa $SSH_OPTS $EC2_USER@$EC2_HOST bash -s << 'EOF'
+          set -euo pipefail
+          docker load < /tmp/brb-events.tar
           docker stop brb-events-prod || true
           docker rm brb-events-prod || true
-          
-          echo "Starting new container..."
           docker run -d \
             --name brb-events-prod \
-            -p 127.0.0.1:3002:80 \
             --restart unless-stopped \
+            -p 127.0.0.1:3002:80 \
             brb-events:latest
-          
-          echo "Cleaning up..."
-          rm -f /tmp/brb-events.tar.gz
-          docker image prune -f
-          
-          echo "Deployment successful!"
+          docker ps --filter name=brb-events-prod --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+          docker inspect -f '{{.State.Running}}' brb-events-prod | grep true
+          rm /tmp/brb-events.tar
           EOF
-          
-          # Cleanup local image
-          rm -f brb-events.tar.gz
+
+          rm -f brb-events.tar
