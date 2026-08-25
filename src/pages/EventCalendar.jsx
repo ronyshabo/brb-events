@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { normalizeEventStatus } from '../utils/eventStatus'
+
+const STATUS_COLORS = { approved: '#1e8449', pending: '#d68910', rejected: '#c0392b' }
+const STATUS_LABELS = { approved: 'Approved', pending: 'Pending', rejected: 'Rejected' }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = [
@@ -148,8 +152,9 @@ function EventCalendar({ events = [] }) {
                     <div className="cal-event-meta"><strong>Band:</strong> {e.bandName}</div>
                   )}
                   <div className="cal-event-meta">
-                    <strong>Status:</strong> <span style={{ color: e.status === 'approved' ? '#1e8449' : e.status === 'pending' ? '#d68910' : '#c0392b' }}>
-                      {e.status === 'approved' ? 'Approved' : e.status === 'pending' ? 'Pending' : e.status}
+                    <strong>Status:</strong>{' '}
+                    <span style={{ color: STATUS_COLORS[normalizeEventStatus(e.status)] || '#c0392b' }}>
+                      {STATUS_LABELS[normalizeEventStatus(e.status)] || normalizeEventStatus(e.status)}
                     </span>
                   </div>
                 </div>

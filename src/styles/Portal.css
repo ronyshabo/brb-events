@@ -606,6 +606,10 @@
   color: #c0392b;
 }
 
+.status-note.approved {
+  color: #1e8449;
+}
+
 /* ── Empty State ──────────────────────── */
 .empty-state {
   text-align: center;

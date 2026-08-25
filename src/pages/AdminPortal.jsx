@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { collection, getDocs, updateDoc, doc, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase/config'
+import { isPendingEvent, normalizeEventStatus } from '../utils/eventStatus'
 import '../styles/Portal.css'
 
 function AdminPortal({ user }) {
@@ -17,7 +18,7 @@ function AdminPortal({ user }) {
         query(collection(db, 'events'), orderBy('createdAt', 'desc'))
       )
       const events = eventsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setPendingEvents(events.filter((e) => e.status === 'pending'))
+      setPendingEvents(events.filter(isPendingEvent))
       setAllEvents(events)
     } catch (err) {
       console.error('Error fetching events:', err)
@@ -60,10 +61,11 @@ function AdminPortal({ user }) {
       approved: '#27ae60',
       rejected: '#e74c3c',
     }
+    const normalized = normalizeEventStatus(status)
     return (
       <span
         style={{
-          background: colors[status] || '#95a5a6',
+          background: colors[normalized] || '#95a5a6',
           color: '#fff',
           padding: '2px 10px',
           borderRadius: '12px',
@@ -72,7 +74,7 @@ function AdminPortal({ user }) {
           textTransform: 'uppercase',
         }}
       >
-        {status}
+        {normalized}
       </span>
     )
   }
@@ -132,7 +134,7 @@ function AdminPortal({ user }) {
                   <h3 style={{ margin: '0 0 0.3rem' }}>{event.title}</h3>
                   {statusBadge(event.status)}
                 </div>
-                {event.status === 'pending' && (
+                {isPendingEvent(event) && (
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
                       onClick={() => handleApprove(event.id)}

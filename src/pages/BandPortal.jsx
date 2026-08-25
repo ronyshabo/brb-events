@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { collection, query, where, getDocs, addDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import EventCalendar from './EventCalendar'
+import { isApprovedEvent, isPendingEvent, normalizeEventStatus } from '../utils/eventStatus'
 import '../styles/Portal.css'
 
 const formatTime12Hour = (time24) => {
@@ -27,7 +28,8 @@ const STATUS_CONFIG = {
 }
 
 function StatusBadge({ status }) {
-  const cfg = STATUS_CONFIG[status] || { label: status, color: '#7f8c8d', bg: '#f2f3f4', border: '#bdc3c7' }
+  const normalized = normalizeEventStatus(status)
+  const cfg = STATUS_CONFIG[normalized] || { label: normalized, color: '#7f8c8d', bg: '#f2f3f4', border: '#bdc3c7' }
   return (
     <span style={{
       background: cfg.bg,
@@ -184,11 +186,11 @@ function BandPortal({ user }) {
             <span className="stat-label">events scheduled</span>
           </div>
           <div className="stat-chip">
-            <span className="stat-number">{myEvents.filter((e) => e.status === 'pending').length}</span>
+            <span className="stat-number">{myEvents.filter(isPendingEvent).length}</span>
             <span className="stat-label">pending review</span>
           </div>
           <div className="stat-chip approved">
-            <span className="stat-number">{myEvents.filter((e) => e.status === 'approved').length}</span>
+            <span className="stat-number">{myEvents.filter(isApprovedEvent).length}</span>
             <span className="stat-label">your approved</span>
           </div>
         </div>
@@ -327,7 +329,7 @@ function BandPortal({ user }) {
           ) : (
             <div className="my-events-list">
               {myEvents.map((event) => {
-                const cfg = STATUS_CONFIG[event.status] || {}
+                const cfg = STATUS_CONFIG[normalizeEventStatus(event.status)] || {}
                 return (
                   <div
                     key={event.id}
@@ -350,10 +352,13 @@ function BandPortal({ user }) {
                       )}
                       {event.venue && <span>📍 {event.venue}</span>}
                     </div>
-                    {event.status === 'pending' && (
+                    {isPendingEvent(event) && (
                       <p className="status-note">⏳ An admin will review your request shortly.</p>
                     )}
-                    {event.status === 'rejected' && (
+                    {isApprovedEvent(event) && (
+                      <p className="status-note approved">✅ Approved — you're on the schedule.</p>
+                    )}
+                    {normalizeEventStatus(event.status) === 'rejected' && (
                       <p className="status-note rejected">This event was not approved. Feel free to submit a new request.</p>
                     )}
                   </div>
